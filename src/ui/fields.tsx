@@ -28,7 +28,7 @@ export function NumberField({ id, label, value, onChange, suffix, error, warning
       <label htmlFor={id} className="field-label">
         {label}
       </label>
-      <div className="flex gap-2">
+      <div className={`flex gap-2 ${children ? 'flex-col sm:flex-row' : ''}`}>
         <div className="relative min-w-0 flex-1">
           <input
             id={id}
@@ -63,23 +63,21 @@ export function UnitSelect({
   value,
   onChange,
   label,
-  units = PRESSURE_UNITS,
 }: {
   value: PressureUnit;
   onChange: (u: PressureUnit) => void;
   label: string;
-  units?: PressureUnit[];
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="flex h-14 shrink-0 rounded-xl border border-slate-300 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800">
-      {units.map((u) => (
+    <div role="radiogroup" aria-label={label} className="flex h-14 shrink-0 gap-0.5 rounded-xl border border-slate-300 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800">
+      {PRESSURE_UNITS.map((u) => (
         <button
           key={u}
           type="button"
           role="radio"
           aria-checked={value === u}
           onClick={() => onChange(u)}
-          className={`min-w-[3.25rem] rounded-lg px-2 text-base font-semibold transition ${
+          className={`min-w-[3.25rem] flex-1 rounded-lg px-2 text-base sm:flex-none font-semibold transition ${
             value === u
               ? 'bg-white text-blue-700 shadow-sm dark:bg-slate-950 dark:text-blue-300'
               : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'

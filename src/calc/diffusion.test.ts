@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { calculate, validate, formatMlPerMin, formatMlPerHr, type DiffusionInput } from './diffusion';
-import { convertPressure, gaugeUnitFor, toKPa } from './units';
+import { convertPressure, toKPa } from './units';
 
 const base: DiffusionInput = {
   volumeMl: 500,
@@ -37,9 +37,9 @@ describe('단위 환산', () => {
     expect(convertPressure(1000, 'mbar', 'bar')).toBeCloseTo(1, 12);
   });
 
-  it('시험 압력·ΔP 는 bar 대신 mbar 를 쓴다', () => {
-    expect(gaugeUnitFor('bar')).toBe('mbar');
-    expect(gaugeUnitFor('psi')).toBe('psi');
+  it('1 MPa 는 1000 kPa, 10 bar', () => {
+    expect(toKPa(1, 'MPa')).toBe(1000);
+    expect(convertPressure(1, 'MPa', 'bar')).toBeCloseTo(10, 12);
   });
 });
 

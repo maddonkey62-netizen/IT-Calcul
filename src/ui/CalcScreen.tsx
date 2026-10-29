@@ -8,7 +8,7 @@ import {
   type DiffusionInput,
   type FieldKey,
 } from '../calc/diffusion';
-import { convertPressure, GAUGE_UNITS, gaugeUnitFor, type PressureUnit } from '../calc/units';
+import { convertPressure, type PressureUnit } from '../calc/units';
 import type { Prefs, TestRecord } from '../data/db';
 import { recentRecords, saveRecord } from '../data/records';
 import { syncNow } from '../data/sync';
@@ -46,31 +46,26 @@ function emptyForm(prefs: Prefs): Form {
   return {
     volumeMl: '',
     testPressure: '',
-    testPressureUnit: gaugeUnitFor(prefs.defaultUnit),
+    testPressureUnit: prefs.defaultUnit,
     stabilizationMin: '',
     measureMin: '',
     dp: '',
-    dpUnit: gaugeUnitFor(prefs.defaultUnit),
+    dpUnit: prefs.defaultUnit,
     ...referenceFrom(prefs),
     wettingFluid: '',
     note: '',
   };
 }
 
-/** bar 로 저장된 예전 기록 값은 mbar 로 바꿔 보여 준다 (계산 결과는 같음) */
-function gaugeValue(value: number, unit: PressureUnit): string {
-  return numToStr(unit === 'bar' ? Number(convertPressure(value, 'bar', 'mbar').toPrecision(12)) : value);
-}
-
 function formFromRecord(r: TestRecord): Form {
   return {
     volumeMl: numToStr(r.volumeMl),
-    testPressure: gaugeValue(r.testPressure, r.testPressureUnit),
-    testPressureUnit: gaugeUnitFor(r.testPressureUnit),
+    testPressure: numToStr(r.testPressure),
+    testPressureUnit: r.testPressureUnit,
     stabilizationMin: numToStr(r.stabilizationMin),
     measureMin: numToStr(r.measureMin),
-    dp: gaugeValue(r.dp, r.dpUnit),
-    dpUnit: gaugeUnitFor(r.dpUnit),
+    dp: numToStr(r.dp),
+    dpUnit: r.dpUnit,
     patm: numToStr(r.patm),
     patmUnit: r.patmUnit,
     tempCorrection: r.tempCorrection,
@@ -123,6 +118,13 @@ export function CalcScreen({ prefs, editing, onEditDone, notify }: Props) {
     }
   }, [editing]);
 
+  // 설정에서 시험·기준 온도를 저장하면 지금 계산 중인 값에도 바로 반영한다 (기록 수정 중에는 그 기록 값 유지)
+  const [appliedTemps, setAppliedTemps] = useState({ test: prefs.testTempC, ref: prefs.refTempC });
+  if (appliedTemps.test !== prefs.testTempC || appliedTemps.ref !== prefs.refTempC) {
+    setAppliedTemps({ test: prefs.testTempC, ref: prefs.refTempC });
+    if (!editing) setForm((f) => ({ ...f, testTempC: numToStr(prefs.testTempC), refTempC: numToStr(prefs.refTempC) }));
+  }
+
   const input = useMemo(() => toInput(form), [form]);
   const validation = useMemo(() => validate(input), [input]);
   const result = useMemo(() => calculate(input), [input]);
@@ -158,12 +160,12 @@ export function CalcScreen({ prefs, editing, onEditDone, notify }: Props) {
     setForm((f) => ({
       ...f,
       volumeMl: numToStr(r.volumeMl),
-      testPressure: gaugeValue(r.testPressure, r.testPressureUnit),
-      testPressureUnit: gaugeUnitFor(r.testPressureUnit),
+      testPressure: numToStr(r.testPressure),
+      testPressureUnit: r.testPressureUnit,
       stabilizationMin: numToStr(r.stabilizationMin),
       measureMin: numToStr(r.measureMin),
       dp: '',
-      dpUnit: gaugeUnitFor(r.dpUnit),
+      dpUnit: r.dpUnit,
       wettingFluid: r.wettingFluid,
     }));
     setTouched(new Set());
@@ -244,14 +246,14 @@ export function CalcScreen({ prefs, editing, onEditDone, notify }: Props) {
         <section className="card space-y-4">
           <NumberField id="volumeMl" label="용기(상류측) 체적 V" suffix="mL" value={form.volumeMl} onChange={(v) => set('volumeMl', v)} error={errorOf('volumeMl')} />
           <NumberField id="testPressure" label="시험 압력 (게이지압)" value={form.testPressure} onChange={(v) => set('testPressure', v)} error={errorOf('testPressure')}>
-            <UnitSelect label="시험 압력 단위" units={GAUGE_UNITS} value={form.testPressureUnit} onChange={(u) => set('testPressureUnit', u)} />
+            <UnitSelect label="시험 압력 단위" value={form.testPressureUnit} onChange={(u) => set('testPressureUnit', u)} />
           </NumberField>
           <div className="grid grid-cols-2 gap-3">
             <NumberField id="stabilizationMin" label="안정화 시간" suffix="min" value={form.stabilizationMin} onChange={(v) => set('stabilizationMin', v)} error={errorOf('stabilizationMin')} />
             <NumberField id="measureMin" label="측정 시간 t" suffix="min" value={form.measureMin} onChange={(v) => set('measureMin', v)} error={errorOf('measureMin')} />
           </div>
           <NumberField id="dp" label="Pressure Drop ΔP" value={form.dp} onChange={(v) => set('dp', v)} error={errorOf('dp')} warning={warningOf('dp')}>
-            <UnitSelect label="ΔP 단위" units={GAUGE_UNITS} value={form.dpUnit} onChange={(u) => set('dpUnit', u)} />
+            <UnitSelect label="ΔP 단위" value={form.dpUnit} onChange={(u) => set('dpUnit', u)} />
           </NumberField>
         </section>
 

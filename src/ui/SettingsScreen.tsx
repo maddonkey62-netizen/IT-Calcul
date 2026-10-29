@@ -31,20 +31,31 @@ function PrefsCard({ prefs, notify }: Props) {
   const [testT, setTestT] = useState(numToStr(prefs.testTempC));
   const [refT, setRefT] = useState(numToStr(prefs.refTempC));
 
+  // 다른 항목을 바꿀 때 아직 저장 안 한 온도 입력이 지워지지 않도록 값별로 따로 맞춘다
+  useEffect(() => setPatm(numToStr(prefs.patm)), [prefs.patm]);
   useEffect(() => {
-    setPatm(numToStr(prefs.patm));
     setTestT(numToStr(prefs.testTempC));
     setRefT(numToStr(prefs.refTempC));
-  }, [prefs]);
+  }, [prefs.testTempC, prefs.refTempC]);
 
   const update = (patch: Partial<Prefs>) => setSetting(SETTING.prefs, { ...prefs, ...patch });
 
-  /** 칸을 벗어날 때 올바른 값이면 저장, 아니면 원래 값으로 */
-  const commit = (key: 'patm' | 'testTempC' | 'refTempC', raw: string, reset: () => void) => {
-    const v = parseNum(raw);
-    const ok = key === 'patm' ? v > 0 : v > -273.15;
-    if (Number.isFinite(v) && ok) void update({ [key]: v });
-    else reset();
+  /** 대기압은 칸을 벗어날 때 올바른 값이면 저장, 아니면 원래 값으로 */
+  const commitPatm = () => {
+    const v = parseNum(patm);
+    if (Number.isFinite(v) && v > 0) void update({ patm: v });
+    else setPatm(numToStr(prefs.patm));
+  };
+
+  const testV = parseNum(testT);
+  const refV = parseNum(refT);
+  const tempError = (v: number) => (Number.isFinite(v) && v > -273.15 ? undefined : '-273.15 °C 보다 큰 숫자를 입력하세요');
+  const tempsChanged = testV !== prefs.testTempC || refV !== prefs.refTempC;
+  const tempsValid = !tempError(testV) && !tempError(refV);
+
+  const saveTemps = async () => {
+    await update({ testTempC: testV, refTempC: refV });
+    notify('온도를 저장했습니다 · 계산 화면에 바로 적용됩니다');
   };
 
   const changePatmUnit = (unit: PressureUnit) =>
@@ -66,22 +77,28 @@ function PrefsCard({ prefs, notify }: Props) {
       <p className="-mt-2 text-sm text-slate-500 dark:text-slate-400">
         새 시험을 시작할 때 자동으로 채워지는 값입니다 (처음 값: 1.01325 bar, 20 °C, 보정 OFF). 이 기기에만 적용됩니다.
       </p>
-      <div onBlur={() => commit('patm', patm, () => setPatm(numToStr(prefs.patm)))}>
+      <div onBlur={commitPatm}>
         <NumberField id="pref-patm" label="대기압 P_atm" value={patm} onChange={setPatm}>
           <UnitSelect label="대기압 단위" value={prefs.patmUnit} onChange={(u) => void changePatmUnit(u)} />
         </NumberField>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div onBlur={() => commit('testTempC', testT, () => setTestT(numToStr(prefs.testTempC)))}>
-          <NumberField id="pref-test" label="시험 온도" suffix="°C" value={testT} onChange={setTestT} />
+      <div className="space-y-3 rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+        <div className="grid grid-cols-2 gap-3">
+          <NumberField id="pref-test" label="시험 온도" suffix="°C" value={testT} onChange={setTestT} error={tempError(testV)} />
+          <NumberField id="pref-ref" label="기준 온도" suffix="°C" value={refT} onChange={setRefT} error={tempError(refV)} />
         </div>
-        <div onBlur={() => commit('refTempC', refT, () => setRefT(numToStr(prefs.refTempC)))}>
-          <NumberField id="pref-ref" label="기준 온도" suffix="°C" value={refT} onChange={setRefT} />
-        </div>
+        <ul className="list-disc space-y-1 pl-5 text-sm text-slate-500 dark:text-slate-400">
+          <li><b className="text-slate-700 dark:text-slate-200">시험 온도</b>: 실제로 시험할 때의 온도 (시험실·필터 온도)</li>
+          <li><b className="text-slate-700 dark:text-slate-200">기준 온도</b>: 결과를 맞춰 비교할 기준 온도 (규격·SOP 의 기준, 보통 20 °C)</li>
+          <li>온도 보정을 켜면 결과에 (기준 온도 + 273.15) ÷ (시험 온도 + 273.15) 를 곱합니다. 예) 25 °C 시험, 20 °C 기준 → × 0.9832. 두 온도가 같으면 결과는 그대로입니다.</li>
+        </ul>
+        <button type="button" className="btn-primary w-full" disabled={!tempsChanged || !tempsValid} onClick={() => void saveTemps()}>
+          {tempsChanged ? '온도 저장' : '저장됨'}
+        </button>
       </div>
       <Toggle label="온도 보정 기본 사용" checked={prefs.tempCorrection} onChange={(v) => void update({ tempCorrection: v })} />
       <div>
-        <span className="field-label">기본 압력 단위 (bar 이면 시험 압력·ΔP 는 mbar)</span>
+        <span className="field-label">기본 압력 단위 (시험 압력·ΔP)</span>
         <UnitSelect label="기본 압력 단위" value={prefs.defaultUnit} onChange={(u) => void update({ defaultUnit: u })} />
       </div>
     </section>

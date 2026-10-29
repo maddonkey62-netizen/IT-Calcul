@@ -55,7 +55,7 @@ export const FACTORY_PREFS: Prefs = {
   testTempC: DEFAULT_TEST_TEMP_C,
   refTempC: DEFAULT_REF_TEMP_C,
   tempCorrection: false,
-  defaultUnit: 'bar',
+  defaultUnit: 'mbar',
 };
 
 export interface SettingsRow {
