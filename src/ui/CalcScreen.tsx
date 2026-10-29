@@ -8,7 +8,7 @@ import {
   type DiffusionInput,
   type FieldKey,
 } from '../calc/diffusion';
-import { convertPressure, DP_UNITS, dpUnitFor, type PressureUnit } from '../calc/units';
+import { convertPressure, GAUGE_UNITS, gaugeUnitFor, type PressureUnit } from '../calc/units';
 import type { Prefs, TestRecord } from '../data/db';
 import { recentRecords, saveRecord } from '../data/records';
 import { syncNow } from '../data/sync';
@@ -46,27 +46,31 @@ function emptyForm(prefs: Prefs): Form {
   return {
     volumeMl: '',
     testPressure: '',
-    testPressureUnit: prefs.defaultUnit,
+    testPressureUnit: gaugeUnitFor(prefs.defaultUnit),
     stabilizationMin: '',
     measureMin: '',
     dp: '',
-    dpUnit: dpUnitFor(prefs.defaultUnit),
+    dpUnit: gaugeUnitFor(prefs.defaultUnit),
     ...referenceFrom(prefs),
     wettingFluid: '',
     note: '',
   };
 }
 
+/** bar 로 저장된 예전 기록 값은 mbar 로 바꿔 보여 준다 (계산 결과는 같음) */
+function gaugeValue(value: number, unit: PressureUnit): string {
+  return numToStr(unit === 'bar' ? Number(convertPressure(value, 'bar', 'mbar').toPrecision(12)) : value);
+}
+
 function formFromRecord(r: TestRecord): Form {
   return {
     volumeMl: numToStr(r.volumeMl),
-    testPressure: numToStr(r.testPressure),
-    testPressureUnit: r.testPressureUnit,
+    testPressure: gaugeValue(r.testPressure, r.testPressureUnit),
+    testPressureUnit: gaugeUnitFor(r.testPressureUnit),
     stabilizationMin: numToStr(r.stabilizationMin),
     measureMin: numToStr(r.measureMin),
-    // bar 로 저장된 예전 기록은 mbar 로 바꿔 보여 준다 (계산 결과는 같음)
-    dp: numToStr(r.dpUnit === 'bar' ? Number(convertPressure(r.dp, 'bar', 'mbar').toPrecision(12)) : r.dp),
-    dpUnit: dpUnitFor(r.dpUnit),
+    dp: gaugeValue(r.dp, r.dpUnit),
+    dpUnit: gaugeUnitFor(r.dpUnit),
     patm: numToStr(r.patm),
     patmUnit: r.patmUnit,
     tempCorrection: r.tempCorrection,
@@ -154,12 +158,12 @@ export function CalcScreen({ prefs, editing, onEditDone, notify }: Props) {
     setForm((f) => ({
       ...f,
       volumeMl: numToStr(r.volumeMl),
-      testPressure: numToStr(r.testPressure),
-      testPressureUnit: r.testPressureUnit,
+      testPressure: gaugeValue(r.testPressure, r.testPressureUnit),
+      testPressureUnit: gaugeUnitFor(r.testPressureUnit),
       stabilizationMin: numToStr(r.stabilizationMin),
       measureMin: numToStr(r.measureMin),
       dp: '',
-      dpUnit: dpUnitFor(r.dpUnit),
+      dpUnit: gaugeUnitFor(r.dpUnit),
       wettingFluid: r.wettingFluid,
     }));
     setTouched(new Set());
@@ -240,14 +244,14 @@ export function CalcScreen({ prefs, editing, onEditDone, notify }: Props) {
         <section className="card space-y-4">
           <NumberField id="volumeMl" label="용기(상류측) 체적 V" suffix="mL" value={form.volumeMl} onChange={(v) => set('volumeMl', v)} error={errorOf('volumeMl')} />
           <NumberField id="testPressure" label="시험 압력 (게이지압)" value={form.testPressure} onChange={(v) => set('testPressure', v)} error={errorOf('testPressure')}>
-            <UnitSelect label="시험 압력 단위" value={form.testPressureUnit} onChange={(u) => set('testPressureUnit', u)} />
+            <UnitSelect label="시험 압력 단위" units={GAUGE_UNITS} value={form.testPressureUnit} onChange={(u) => set('testPressureUnit', u)} />
           </NumberField>
           <div className="grid grid-cols-2 gap-3">
             <NumberField id="stabilizationMin" label="안정화 시간" suffix="min" value={form.stabilizationMin} onChange={(v) => set('stabilizationMin', v)} error={errorOf('stabilizationMin')} />
             <NumberField id="measureMin" label="측정 시간 t" suffix="min" value={form.measureMin} onChange={(v) => set('measureMin', v)} error={errorOf('measureMin')} />
           </div>
           <NumberField id="dp" label="Pressure Drop ΔP" value={form.dp} onChange={(v) => set('dp', v)} error={errorOf('dp')} warning={warningOf('dp')}>
-            <UnitSelect label="ΔP 단위" units={DP_UNITS} value={form.dpUnit} onChange={(u) => set('dpUnit', u)} />
+            <UnitSelect label="ΔP 단위" units={GAUGE_UNITS} value={form.dpUnit} onChange={(u) => set('dpUnit', u)} />
           </NumberField>
         </section>
 

@@ -1,12 +1,12 @@
 export type PressureUnit = 'bar' | 'mbar' | 'psi' | 'kPa';
 
-/** 시험 압력·대기압 단위 */
+/** 대기압·기본 단위 */
 export const PRESSURE_UNITS: PressureUnit[] = ['bar', 'psi', 'kPa'];
-/** ΔP 는 값이 작아서 bar 대신 mbar 로 받는다 */
-export const DP_UNITS: PressureUnit[] = ['mbar', 'psi', 'kPa'];
+/** 시험 압력·ΔP 는 bar 대신 mbar 로 받는다 */
+export const GAUGE_UNITS: PressureUnit[] = ['mbar', 'psi', 'kPa'];
 
-/** 기본 단위가 bar 이면 ΔP 는 mbar 를 쓴다 */
-export function dpUnitFor(unit: PressureUnit): PressureUnit {
+/** 기본 단위가 bar 이면 시험 압력·ΔP 는 mbar 를 쓴다 */
+export function gaugeUnitFor(unit: PressureUnit): PressureUnit {
   return unit === 'bar' ? 'mbar' : unit;
 }
 

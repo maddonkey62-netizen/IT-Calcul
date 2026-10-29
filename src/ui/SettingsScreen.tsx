@@ -81,7 +81,7 @@ function PrefsCard({ prefs, notify }: Props) {
       </div>
       <Toggle label="온도 보정 기본 사용" checked={prefs.tempCorrection} onChange={(v) => void update({ tempCorrection: v })} />
       <div>
-        <span className="field-label">기본 압력 단위 (시험 압력·ΔP, bar 이면 ΔP 는 mbar)</span>
+        <span className="field-label">기본 압력 단위 (bar 이면 시험 압력·ΔP 는 mbar)</span>
         <UnitSelect label="기본 압력 단위" value={prefs.defaultUnit} onChange={(u) => void update({ defaultUnit: u })} />
       </div>
     </section>

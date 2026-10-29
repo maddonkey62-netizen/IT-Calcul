@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { calculate, validate, formatMlPerMin, formatMlPerHr, type DiffusionInput } from './diffusion';
-import { convertPressure, dpUnitFor, toKPa } from './units';
+import { convertPressure, gaugeUnitFor, toKPa } from './units';
 
 const base: DiffusionInput = {
   volumeMl: 500,
@@ -37,9 +37,9 @@ describe('단위 환산', () => {
     expect(convertPressure(1000, 'mbar', 'bar')).toBeCloseTo(1, 12);
   });
 
-  it('ΔP 는 bar 대신 mbar 를 쓴다', () => {
-    expect(dpUnitFor('bar')).toBe('mbar');
-    expect(dpUnitFor('psi')).toBe('psi');
+  it('시험 압력·ΔP 는 bar 대신 mbar 를 쓴다', () => {
+    expect(gaugeUnitFor('bar')).toBe('mbar');
+    expect(gaugeUnitFor('psi')).toBe('psi');
   });
 });
 
@@ -151,6 +151,11 @@ describe('입력 검사', () => {
     expect(v.errors).toEqual([]);
     expect(v.warnings.map((w) => w.field)).toEqual(['dp']);
     expect(calculate(input)).not.toBeNull();
+  });
+
+  it('시험 압력 mbar 와 ΔP mbar 도 비교한다', () => {
+    const input = { ...base, testPressure: 40, testPressureUnit: 'mbar' as const, dp: 50, dpUnit: 'mbar' as const };
+    expect(validate(input).warnings.map((w) => w.field)).toEqual(['dp']);
   });
 
   it('ΔP < 시험 압력이면 경고 없음', () => {
