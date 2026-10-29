@@ -1,0 +1,283 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Diffusion Rate 계산기 배포 가이드</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#1f2328;--sub:#64748b;--line:#e2e8f0;
+--p:#2563eb;--pbg:#eff6ff;--ok:#059669;--okbg:#ecfdf5;--w:#d97706;--wbg:#fffbeb;--r:#dc2626;--rbg:#fef2f2;--code:#f1f5f9}
+@media (prefers-color-scheme:dark){:root{--bg:#0f172a;--card:#1e293b;--ink:#e2e8f0;--sub:#94a3b8;--line:#334155;
+--pbg:#1e2a44;--okbg:#14332a;--wbg:#3a2e14;--rbg:#3b1d1d;--code:#0f172a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:16px;line-height:1.7}
+.wrap{max-width:860px;margin:0 auto;padding:32px 16px 80px}
+header h1{margin:0 0 4px;font-size:26px}
+.meta{color:var(--sub);font-size:14px}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;margin-top:18px}
+h2{margin:0 0 6px;font-size:20px;display:flex;align-items:center;gap:10px}
+h2 .n{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--p);color:#fff;font-size:16px;flex:none}
+h3{font-size:16px;margin:22px 0 8px;color:var(--p)}
+.lead{color:var(--sub);margin:0 0 10px}
+ol.steps{padding-left:22px;margin:8px 0}
+ol.steps>li{margin-bottom:10px}
+.btn{display:inline-block;padding:0 8px;border:1px solid var(--line);border-radius:6px;background:var(--pbg);color:var(--p);font-weight:700;font-size:14px;white-space:nowrap}
+code,.mono{font-family:ui-monospace,Consolas,monospace;font-size:13.5px;background:var(--code);padding:1px 6px;border-radius:5px;word-break:break-all}
+.screen{border:2px dashed var(--line);border-radius:10px;padding:10px 14px;margin:8px 0;font-size:14px;color:var(--sub)}
+.screen b{color:var(--ink)}
+.note{border-left:4px solid var(--p);background:var(--pbg);padding:10px 14px;border-radius:8px;margin:12px 0;font-size:15px}
+.warn{border-left:4px solid var(--w);background:var(--wbg);padding:10px 14px;border-radius:8px;margin:12px 0;font-size:15px}
+.stop{border-left:4px solid var(--r);background:var(--rbg);padding:10px 14px;border-radius:8px;margin:12px 0;font-size:15px}
+.done{border-left:4px solid var(--ok);background:var(--okbg);padding:10px 14px;border-radius:8px;margin:14px 0 0;font-size:15px}
+.toc{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:12px}
+.toc a{display:block;border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-decoration:none;color:var(--ink);background:var(--card);font-size:14px}
+.toc a b{display:block;color:var(--p);font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th,td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+th{color:var(--sub);font-size:13px}
+.scroll{overflow-x:auto}
+.memo{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:15px}
+.memo span{color:var(--sub)}
+.memo i{font-style:normal;border-bottom:1px solid var(--line);min-height:24px}
+</style>
+</head><body><div class="wrap">
+
+<header>
+<h1>Diffusion Rate 계산기 배포 가이드</h1>
+<div class="meta">처음 한 번만 하면 되는 설치 순서 · 약 40분 · 앱 v1.0.0 · 작성 2026-10-28</div>
+<div class="toc">
+ <a href="#s0"><b>0</b>준비물</a>
+ <a href="#s1"><b>1</b>Google Sheets 만들기</a>
+ <a href="#s2"><b>2</b>Apps Script 배포</a>
+ <a href="#s3"><b>3</b>앱 배포 (GitHub Pages)</a>
+ <a href="#s4"><b>4</b>Sheets 연결 확인</a>
+ <a href="#s5"><b>5</b>각 기기에 설치</a>
+ <a href="#s6"><b>6</b>나중에 고칠 때</a>
+ <a href="#s7"><b>7</b>문제 해결</a>
+</div>
+</header>
+
+<!-- 0 -->
+<section id="s0">
+<h2><span class="n">0</span>준비물</h2>
+<ul>
+ <li><b>Google 계정</b>: 기록이 저장될 계정입니다. 이 계정의 Google Drive에 시트가 만들어집니다.</li>
+ <li><b>GitHub 계정</b>: 앱을 인터넷에 올리는 무료 서비스입니다. 없으면 3단계에서 만듭니다.</li>
+ <li><b>이 폴더</b>: <code>D:\Code\IT Calcul</code> (앱 코드가 모두 들어 있습니다)</li>
+ <li>PC 1대 (Chrome 또는 Edge 브라우저)</li>
+</ul>
+<p class="lead">진행하면서 아래 두 값을 메모장에 적어 두세요. 나중에 계속 씁니다.</p>
+<div class="memo">
+ <span>① 웹앱 URL</span><i></i>
+ <span>② 앱 주소</span><i></i>
+</div>
+<div class="note">화면 모양이나 메뉴 이름은 Google·GitHub가 업데이트하면 조금 달라질 수 있습니다. 비슷한 이름의 메뉴를 찾으면 됩니다.</div>
+</section>
+
+<!-- 1 -->
+<section id="s1">
+<h2><span class="n">1</span>Google Sheets 만들기</h2>
+<p class="lead">시험 기록이 쌓일 스프레드시트를 하나 만듭니다.</p>
+<ol class="steps">
+ <li>브라우저에서 <code>https://sheets.google.com</code> 에 접속해 기록용 Google 계정으로 로그인합니다.</li>
+ <li><span class="btn">+ 빈 스프레드시트</span> (왼쪽 위의 큰 <b>+</b> 칸)를 누릅니다.</li>
+ <li>왼쪽 위 <b>제목 없는 스프레드시트</b>를 눌러 이름을 바꿉니다. 예) <code>Diffusion Rate 기록</code></li>
+</ol>
+<div class="screen">지금 보이는 화면: 빈 표 하나, 아래쪽 탭에 <b>시트1</b>. 시트는 2단계에서 자동으로 만들어지니 아무것도 입력하지 마세요.</div>
+<div class="note"><b>팀원과 공유</b>: 오른쪽 위 <span class="btn">공유</span> → 팀원 이메일 입력 → 권한 선택(보기 전용이면 <b>뷰어</b>, 직접 고칠 사람은 <b>편집자</b>). 앱에서 저장하는 데는 공유가 필요 없습니다. 시트를 열어 보려는 사람에게만 주세요.</div>
+<div class="done">✅ 확인: 이름을 바꾼 빈 스프레드시트가 열려 있습니다.</div>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+<h2><span class="n">2</span>Apps Script 배포</h2>
+<p class="lead">앱이 보낸 기록을 시트에 적어 주는 작은 프로그램(서버)을 시트에 붙입니다.</p>
+
+<h3>2-1. 코드 붙여 넣기</h3>
+<ol class="steps">
+ <li>1단계 스프레드시트에서 위쪽 메뉴 <span class="btn">확장 프로그램</span> → <span class="btn">Apps Script</span> 를 누릅니다. 새 탭이 열립니다.</li>
+ <li>편집기 안의 기존 내용(<code>function myFunction() {…}</code>)을 <b>Ctrl+A</b> 로 전부 선택하고 <b>Delete</b> 로 지웁니다.</li>
+ <li>PC에서 <code>D:\Code\IT Calcul\apps-script\Code.gs</code> 파일을 <b>메모장</b>으로 엽니다 (파일 오른쪽 클릭 → 연결 프로그램 → 메모장).</li>
+ <li>메모장에서 <b>Ctrl+A</b> → <b>Ctrl+C</b>, Apps Script 편집기에 <b>Ctrl+V</b> 로 붙여 넣습니다.</li>
+ <li>위쪽 <b>제목 없는 프로젝트</b>를 눌러 이름을 <code>Diffusion Rate 서버</code> 로 바꿉니다.</li>
+ <li>💾 <span class="btn">프로젝트 저장</span> 아이콘(또는 <b>Ctrl+S</b>)을 누릅니다.</li>
+</ol>
+
+<h3>2-2. 처음 한 번 실행해 권한 주기</h3>
+<ol class="steps">
+ <li>편집기 위쪽 도구 막대에서 함수 선택 칸(▶ 실행 버튼 오른쪽)을 눌러 <b>setup</b> 을 고릅니다.</li>
+ <li><span class="btn">▶ 실행</span> 을 누릅니다.</li>
+ <li><b>승인 필요</b> 창이 뜨면 <span class="btn">권한 검토</span> → 기록용 Google 계정을 선택합니다.</li>
+ <li><b>"Google에서 확인하지 않은 앱"</b> 경고가 나오면, 왼쪽 아래 <span class="btn">고급</span> → <span class="btn">Diffusion Rate 서버(으)로 이동(안전하지 않음)</span> 을 누릅니다.
+  <div class="note">직접 만든 스크립트라서 Google 심사를 받지 않았다는 뜻입니다. 내 코드이므로 진행해도 됩니다. 요청하는 권한은 <b>이 스프레드시트 보기·수정</b>입니다.</div></li>
+ <li><span class="btn">허용</span> (또는 <span class="btn">계속</span>)을 누릅니다.</li>
+ <li>아래쪽 <b>실행 로그</b>에 <code>실행이 완료되었습니다</code> 가 나오면 성공입니다.</li>
+ <li>스프레드시트 탭으로 돌아가 보면 아래쪽에 <b>시험기록</b>, <b>변경이력</b>, <b>설정</b> 시트가 생겨 있습니다. 비어 있는 <b>시트1</b>은 지워도 됩니다 (탭 오른쪽 클릭 → 삭제).</li>
+</ol>
+
+<h3>2-3. 웹앱으로 배포</h3>
+<ol class="steps">
+ <li>Apps Script 편집기 오른쪽 위 파란 <span class="btn">배포</span> → <span class="btn">새 배포</span> 를 누릅니다.</li>
+ <li>왼쪽 <b>유형 선택</b> 옆 ⚙ 톱니 → <span class="btn">웹 앱</span> 을 고릅니다.</li>
+ <li>아래와 같이 입력합니다.
+  <div class="scroll"><table>
+   <tr><th>항목</th><th>입력값</th></tr>
+   <tr><td>설명</td><td><code>v1</code></td></tr>
+   <tr><td>다음 사용자 인증 정보로 실행</td><td><b>나</b> (내 이메일)</td></tr>
+   <tr><td>액세스 권한이 있는 사용자</td><td><b>모든 사용자</b> <span class="meta">("Google 계정이 있는 모든 사용자"가 아님)</span></td></tr>
+  </table></div></li>
+ <li><span class="btn">배포</span> 를 누릅니다. 권한을 다시 물으면 2-2와 같이 허용합니다.</li>
+ <li><b>웹 앱 URL</b> 아래 <span class="btn">복사</span> 를 눌러 메모장 <b>① 웹앱 URL</b> 칸에 붙여 넣습니다.<br>
+  모양: <code>https://script.google.com/macros/s/AKfy…긴 글자…/exec</code></li>
+ <li><span class="btn">완료</span> 를 누릅니다.</li>
+</ol>
+<div class="warn"><b>"모든 사용자"인 이유</b>: 앱에는 로그인이 없어서, 앱이 시트에 기록을 보내려면 이 설정이 필요합니다. 대신 <b>웹앱 URL을 아는 사람은 누구나 시트에 기록을 보낼 수 있습니다.</b> URL은 팀원에게만 메신저로 전하고, 공개 게시판·GitHub에는 올리지 마세요. 시트 자체(내용 보기)는 1단계의 공유 설정을 따르며 URL로 열리지 않습니다.</div>
+<div class="done">✅ 확인: 메모장에 <code>…/exec</code> 로 끝나는 웹앱 URL이 적혀 있습니다. 이 URL을 브라우저 주소창에 넣으면 <code>{"ok":true,"app":"diffusion-rate",…}</code> 같은 글자가 보입니다.</div>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+<h2><span class="n">3</span>앱 배포 (GitHub Pages)</h2>
+<p class="lead">앱 코드를 GitHub에 올리면 자동으로 테스트·빌드되어 무료 인터넷 주소가 생깁니다. 처음 한 번만 설정하면, 이후에는 코드를 올릴 때마다 자동으로 다시 배포됩니다.</p>
+
+<h3>3-1. GitHub 계정 만들기 (이미 있으면 건너뛰기)</h3>
+<ol class="steps">
+ <li><code>https://github.com/signup</code> 에서 이메일·비밀번호·사용자 이름(영문)을 입력해 가입합니다.</li>
+ <li>사용자 이름을 메모해 두세요. 앱 주소에 들어갑니다. 예) <code>hong-qa</code></li>
+</ol>
+
+<h3>3-2. GitHub Desktop 설치</h3>
+<p class="lead">명령어 없이 버튼으로 코드를 올리는 프로그램입니다.</p>
+<ol class="steps">
+ <li><code>https://desktop.github.com</code> 에서 <span class="btn">Download for Windows</span> 를 눌러 설치합니다.</li>
+ <li>실행 후 <span class="btn">Sign in to GitHub.com</span> → 브라우저에서 <span class="btn">Authorize desktop</span> 을 눌러 로그인합니다.</li>
+ <li>이름·이메일 확인 화면은 그대로 <span class="btn">Finish</span> 를 누릅니다.</li>
+</ol>
+
+<h3>3-3. 폴더를 저장소로 만들고 올리기</h3>
+<ol class="steps">
+ <li>GitHub Desktop 메뉴 <span class="btn">File</span> → <span class="btn">Add local repository…</span> 를 누릅니다.</li>
+ <li><span class="btn">Choose…</span> 로 <code>D:\Code\IT Calcul</code> 폴더를 고릅니다.</li>
+ <li>"This directory does not appear to be a Git repository" 문구 아래 파란 글자 <span class="btn">create a repository</span> 를 누릅니다.</li>
+ <li>열린 창에서 <b>Name</b>·<b>Local path</b>는 그대로 두고, <b>Git ignore</b>·<b>License</b>는 <b>None</b> 으로 둔 채 <span class="btn">Create repository</span> 를 누릅니다.
+  <div class="note">폴더 안의 <code>.gitignore</code> 파일 덕분에 용량이 큰 <code>node_modules</code>, <code>dist</code> 폴더는 자동으로 빠집니다.</div></li>
+ <li>왼쪽 <b>Changes</b> 탭에 파일 목록이 남아 있으면: 왼쪽 아래 <b>Summary</b> 칸에 <code>첫 업로드</code> 입력 → <span class="btn">Commit to main</span>. (목록이 비어 있으면 이미 저장된 것이니 건너뜁니다.)</li>
+ <li>위쪽 <span class="btn">Publish repository</span> 를 누릅니다.</li>
+ <li>창에서:
+  <ul>
+   <li><b>Name</b>: <code>diffusion-rate</code> 로 바꿉니다 (영문 소문자·하이픈만).</li>
+   <li><b>Keep this code private</b>: <b>체크 해제</b>합니다. 무료 계정의 GitHub Pages는 공개 저장소에서만 됩니다.</li>
+  </ul>
+  <span class="btn">Publish repository</span> 를 누릅니다.</li>
+</ol>
+<div class="warn"><b>공개 저장소에 올라가는 것</b>: 앱 코드, 서버 코드(Code.gs), 요구정의서·이 가이드. <b>시험 기록과 웹앱 URL은 올라가지 않습니다</b> (기록은 Sheets에, URL은 각 기기 설정에만 있음). 요구정의서를 공개하고 싶지 않다면 Publish 전에 해당 HTML 파일을 다른 폴더로 옮기세요.</div>
+
+<h3>3-4. GitHub Pages 켜기</h3>
+<ol class="steps">
+ <li>GitHub Desktop 메뉴 <span class="btn">Repository</span> → <span class="btn">View on GitHub</span> 을 누르면 브라우저에 저장소 페이지가 열립니다.</li>
+ <li>위쪽 <span class="btn">⚙ Settings</span> → 왼쪽 메뉴 <span class="btn">Pages</span> 를 누릅니다.</li>
+ <li><b>Build and deployment</b> → <b>Source</b> 를 <span class="btn">GitHub Actions</span> 로 바꿉니다 (저장 버튼 없이 바로 적용됩니다).</li>
+ <li>위쪽 <span class="btn">▶ Actions</span> 탭을 누릅니다. <b>Deploy to GitHub Pages</b> 실행이 보입니다.
+  <ul>
+   <li>🟡 노란 점: 진행 중입니다. 2~3분 기다립니다.</li>
+   <li>❌ 빨간 X: Pages를 켜기 전에 실행돼서 실패한 것입니다. 그 줄을 눌러 들어가 오른쪽 위 <span class="btn">Re-run all jobs</span> 를 누릅니다.</li>
+   <li>✅ 초록 체크: 완료입니다.</li>
+  </ul></li>
+ <li>✅ 가 되면 <span class="btn">Settings</span> → <span class="btn">Pages</span> 위쪽에 <b>Your site is live at …</b> 주소가 나옵니다. 이것을 메모장 <b>② 앱 주소</b> 칸에 적습니다.<br>
+  모양: <code>https://사용자이름.github.io/diffusion-rate/</code></li>
+</ol>
+<div class="done">✅ 확인: ② 앱 주소를 브라우저에서 열면 파란 계산기 화면이 나옵니다. 처음 열 때 위쪽에 "오프라인에서도 쓸 수 있게 준비됐습니다"가 잠깐 뜹니다.</div>
+</section>
+
+<!-- 4 -->
+<section id="s4">
+<h2><span class="n">4</span>Sheets 연결 확인</h2>
+<p class="lead">PC 한 대에서 먼저 연결하고, 기록 1건이 시트에 들어가는지 확인합니다.</p>
+<ol class="steps">
+ <li>② 앱 주소를 엽니다 → 아래쪽(또는 왼쪽) 메뉴 <span class="btn">⚙ 설정</span>.</li>
+ <li><b>Google Sheets 연결</b> 칸에 ① 웹앱 URL을 붙여 넣고 <span class="btn">연결 테스트 후 저장</span> 을 누릅니다.</li>
+ <li>✓ 표시와 함께 <b>상태: 연결됨</b> 이 나오면 성공입니다.</li>
+ <li>같은 화면 <b>습윤 용액 목록</b>에서 쓰는 용액을 <span class="btn">+ 추가</span> 로 등록합니다. 예) <code>물</code>, <code>IPA 60%</code>. 이 목록은 시트의 <b>설정</b> 시트에 저장되어 다른 기기에도 똑같이 나타납니다.</li>
+ <li><span class="btn">🧮 계산</span> 으로 가서 아래 샘플 값을 넣고 <span class="btn">저장</span> 합니다.
+  <div class="scroll"><table>
+   <tr><th>체적 V</th><th>시험 압력</th><th>측정 시간 t</th><th>ΔP</th><th>대기압</th><th>결과</th></tr>
+   <tr><td>500 mL</td><td>1 bar</td><td>5 min</td><td>50 mbar</td><td>기본값</td><td><b>4.93 mL/min</b> · 296.1 mL/hr</td></tr>
+  </table></div></li>
+ <li>스프레드시트의 <b>시험기록</b> 시트를 새로고침(F5)하면 한 줄이 들어와 있습니다. <b>변경이력</b> 시트에도 <code>create</code> 한 줄이 생깁니다.</li>
+ <li>확인이 끝나면 앱 <span class="btn">🗂 최근 기록</span> 에서 이 샘플을 <span class="btn">삭제</span> 합니다. 시트의 줄은 지워지지 않고 <b>deleted</b> 열이 <code>TRUE</code> 로 바뀝니다 (이력 보존).</li>
+</ol>
+<div class="done">✅ 확인: 시험기록 시트에 샘플 1줄, 앱 위쪽 배지가 대기 0건입니다.</div>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+<h2><span class="n">5</span>각 기기에 설치</h2>
+<p class="lead">기기마다 ① 앱 주소로 열고 → 홈 화면에 설치 → 설정에 웹앱 URL 붙여 넣기, 이 세 가지를 합니다.</p>
+<div class="note"><b>주소 보내기 팁</b>: ② 앱 주소와 ① 웹앱 URL을 카카오톡 "나와의 채팅"으로 보내 두면 휴대폰·태블릿에서 길게 눌러 복사할 수 있습니다. 카톡 안에서 바로 열지 말고 아래 브라우저로 여세요.</div>
+
+<h3>5-1. 현장 PC (Windows · Chrome 또는 Edge)</h3>
+<ol class="steps">
+ <li>Chrome(또는 Edge)에서 ② 앱 주소를 엽니다.</li>
+ <li>주소창 오른쪽 끝의 <span class="btn">⊕ 설치</span> 아이콘(모니터+화살표 모양)을 누르고 → <span class="btn">설치</span>.<br>
+  <span class="meta">아이콘이 없으면: Chrome은 ⋮ 메뉴 → <b>전송, 저장, 공유</b> → <b>페이지를 앱으로 설치</b> / Edge는 … 메뉴 → <b>앱</b> → <b>이 사이트를 앱으로 설치</b>.</span></li>
+ <li>바탕화면·시작 메뉴에 <b>Diffusion Rate</b> 아이콘이 생기고, 주소창 없는 창으로 열립니다.</li>
+ <li><span class="btn">⚙ 설정</span> → 웹앱 URL 붙여 넣기 → <span class="btn">연결 테스트 후 저장</span>.</li>
+</ol>
+
+<h3>5-2. Android 휴대폰·태블릿 (Chrome)</h3>
+<ol class="steps">
+ <li><b>Chrome</b> 앱에서 ② 앱 주소를 엽니다 (삼성 인터넷도 비슷합니다).</li>
+ <li>아래쪽에 <b>"앱 설치"</b> 안내가 뜨면 누릅니다. 안 뜨면 오른쪽 위 <span class="btn">⋮</span> → <span class="btn">앱 설치</span> (또는 <span class="btn">홈 화면에 추가</span> → <span class="btn">설치</span>).</li>
+ <li>홈 화면의 파란 아이콘으로 엽니다.</li>
+ <li><span class="btn">⚙ 설정</span> → 웹앱 URL 붙여 넣기 → <span class="btn">연결 테스트 후 저장</span>.</li>
+</ol>
+
+<h3>5-3. iPhone·iPad (Safari)</h3>
+<ol class="steps">
+ <li><b>Safari</b> 에서 ② 앱 주소를 엽니다.</li>
+ <li>아래쪽(iPad는 위쪽) <span class="btn">공유 ⬆︎</span> 버튼 → 목록을 내려 <span class="btn">홈 화면에 추가</span> → 오른쪽 위 <span class="btn">추가</span>.</li>
+ <li><b>꼭 홈 화면 아이콘으로</b> 엽니다. Safari에서 연 앱과 홈 화면 앱은 저장 공간이 따로라서 설정을 다시 해야 합니다.</li>
+ <li><span class="btn">⚙ 설정</span> → 웹앱 URL 붙여 넣기 → <span class="btn">연결 테스트 후 저장</span>.</li>
+</ol>
+<div class="warn"><b>iPhone·iPad 주의</b>: 앱이 꺼져 있을 때는 기록을 보내지 못합니다. 와이파이가 없는 곳에서 저장한 기록은 <b>다음에 앱을 열 때</b> 보내집니다. 위쪽 배지의 "대기 n건"이 0이 되는지 가끔 확인하세요.</div>
+
+<div class="done">✅ 기기별 확인: 설정 화면 <b>상태: 연결됨</b>, 습윤 용액 목록이 4단계에서 등록한 것과 같음. 기기마다 <b>기기 ID</b>가 달라서, 시트의 device_id 열로 어느 기기에서 저장했는지 알 수 있습니다.</div>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+<h2><span class="n">6</span>나중에 고칠 때</h2>
+
+<h3>앱 화면·계산을 고쳤을 때</h3>
+<ol class="steps">
+ <li>GitHub Desktop을 엽니다. 왼쪽 <b>Changes</b>에 바뀐 파일이 보입니다.</li>
+ <li><b>Summary</b>에 무엇을 고쳤는지 한 줄 입력 → <span class="btn">Commit to main</span> → 위쪽 <span class="btn">Push origin</span>.</li>
+ <li>GitHub <b>Actions</b> 탭에서 ✅ 가 되면(2~3분) 배포 끝입니다. 테스트가 실패하면 ❌ 가 되고 <b>기존 앱은 그대로</b> 유지됩니다.</li>
+ <li>각 기기에서 앱을 열면 위쪽에 <b>"새 버전이 있습니다"</b> 가 뜹니다 → <span class="btn">업데이트</span>. 저장된 기록과 설정은 그대로입니다.</li>
+</ol>
+
+<h3>서버 코드(Code.gs)를 고쳤을 때</h3>
+<ol class="steps">
+ <li>Apps Script 편집기에 새 코드를 붙여 넣고 저장합니다.</li>
+ <li><span class="btn">배포</span> → <span class="btn">배포 관리</span> → 기존 배포를 고르고 ✎ <span class="btn">수정</span>.</li>
+ <li><b>버전</b>을 <span class="btn">새 버전</span> 으로 바꾸고 → <span class="btn">배포</span>.</li>
+</ol>
+<div class="stop"><b>"새 배포"를 누르지 마세요.</b> 새 배포를 만들면 웹앱 URL이 바뀌어 모든 기기에서 URL을 다시 붙여 넣어야 합니다. 꼭 <b>배포 관리 → 수정 → 새 버전</b>으로 하세요. URL이 그대로 유지됩니다.</div>
+</section>
+
+<!-- 7 -->
+<section id="s7">
+<h2><span class="n">7</span>문제 해결</h2>
+<div class="scroll"><table>
+ <tr><th style="width:36%">증상</th><th>해결</th></tr>
+ <tr><td>연결 테스트 실패 / "URL 형식을 확인하세요"</td><td>URL이 <code>…/exec</code> 로 끝나는지 확인합니다 (<code>/dev</code> 로 끝나는 테스트 주소는 안 됩니다). 앞뒤 공백도 지웁니다.</td></tr>
+ <tr><td>연결 테스트 실패 (URL은 맞음)</td><td>2-3의 <b>액세스 권한</b>이 <b>모든 사용자</b>인지 확인합니다. 배포 관리 → 수정에서 바꾸고 새 버전으로 배포합니다.</td></tr>
+ <tr><td>앱 주소가 404</td><td>Actions 탭에서 ✅ 인지 확인하고, Settings → Pages의 Source가 <b>GitHub Actions</b>인지 확인합니다. 처음 배포 후 몇 분 걸릴 수 있습니다.</td></tr>
+ <tr><td>Actions에 ❌ (Re-run 해도 실패)</td><td>실패한 줄을 눌러 빨간 단계를 열고 오류 문구를 복사해 개발 담당(또는 Claude)에게 전달합니다.</td></tr>
+ <tr><td>배지에 "대기 n건"이 줄지 않음</td><td>인터넷 연결을 확인하고 <span class="btn">🗂 최근 기록</span> → <span class="btn">지금 동기화</span>. 기록 옆 ⚠ 를 눌러 오류 내용을 확인합니다.</td></tr>
+ <tr><td>"서버가 바쁩니다"</td><td>여러 기기가 동시에 저장한 경우입니다. 자동으로 다시 보내니 그대로 두면 됩니다.</td></tr>
+ <tr><td>설치 버튼이 안 보임</td><td>iPhone은 Safari에서만 됩니다. 카톡·네이버 앱 안의 브라우저가 아니라 Chrome/Safari로 직접 엽니다.</td></tr>
+ <tr><td>기기를 바꾸거나 앱을 지웠음</td><td>시트에 보낸 기록은 남아 있습니다. 새 기기에서 5단계만 다시 하면 됩니다. 단, <b>대기 중이던(아직 안 보낸) 기록은 사라지니</b> 앱을 지우기 전에 대기 0건을 확인하세요.</td></tr>
+ <tr><td>기록을 찾거나 차트·엑셀이 필요함</td><td>스프레드시트에서 합니다. 필터(데이터 → 필터 만들기), 차트(삽입 → 차트), 엑셀 받기(파일 → 다운로드 → .xlsx). <b>deleted</b> 열이 TRUE인 줄은 삭제한 기록입니다.</td></tr>
+</table></div>
+<div class="warn"><b>시트에서 직접 고치지 마세요</b>: 시험기록 시트의 값을 손으로 바꾸면 앱의 기록과 달라집니다. 수정은 앱의 <b>최근 기록 → 수정</b>으로 하세요. 열 이름(1행)과 열 순서도 바꾸면 안 됩니다. 분석용 표가 필요하면 다른 시트를 만들어 거기서 참조하세요.</div>
+</section>
+
+</div></body></html>
